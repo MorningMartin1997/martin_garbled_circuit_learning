@@ -53,6 +53,21 @@ def main(
     else:
         logging.error(f"Unknown party '{party}'")
 
+class Alice(YaoGarbler):
+    """
+    Alice is the generator of the Yao circuit. (Garbler)
+
+    Alice create a Yao circuit and sends it to the evaluator along with
+    its encrypted inputs. Alice will finally print the truth table of
+    the circuit for all combination of Alice-Bob inputs.
+
+    Alice does not know Bob's inputs but for the purpose of printing
+    the truth table only, Alice assumes that Bob's inputs follow a specific
+    order.
+    """
+    def __init__(self, circuits, oblivious_transfer=True):
+        super().__init__(circuits)
+        self.socket =
 
 if __name__ == '__main__':
     import argparse
