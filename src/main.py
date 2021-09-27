@@ -10,8 +10,10 @@ from abc import ABC, abstractmethod
 logging.basicConfig(format="[%(levelname)s] %(message)s",
                     level=logging.WARNING)
 
+
 class YaoGarbler(ABC):
     """An abstract class for Yao garblers"""
+
     def __init__(self, circuit_file_path):
         circuits = util.parse_json(circuit_file_path)
         self.name = circuits["name"]
@@ -36,22 +38,6 @@ class YaoGarbler(ABC):
     def start(self):
         pass
 
-def main(
-        party,
-        circuit_path="circuits/bool.json",
-        oblivious_transfer=True,
-        print_mode="circuit",
-        log_level=logging.WARNING,
-):
-    logging.getLogger().setLevel(log_level)
-
-    if party == "alice":
-        alice = Alice(circuit_path, oblivious_transfer=oblivious_transfer)
-        alice.start()
-    elif party = "bob":
-        bob = Bob(oblivious_transfer=oblivious_transfer)
-    else:
-        logging.error(f"Unknown party '{party}'")
 
 class Alice(YaoGarbler):
     """
@@ -65,12 +51,46 @@ class Alice(YaoGarbler):
     the truth table only, Alice assumes that Bob's inputs follow a specific
     order.
     """
+
     def __init__(self, circuits, oblivious_transfer=True):
         super().__init__(circuits)
-        self.socket =
+        self.socket = util.GarblerSocket()
+
+    def start(self):
+        """
+        Start Yao Protocol
+        Returns:
+
+        """
+        for circuit in self.circuits:
+            to_send = {
+                "circuit": circuit["circuit"],
+                "garbled_tables": circuit["garbled_tables"],
+                "p_bits_out": circuit["p_bits_out"],
+            }
+            logging.debug(f"Sending {circuit['circuit']['id']}")
+            self.socket.send_wait(to_send)
+
+
+def main(
+        party,
+        circuit_path="circuits/bool.json",
+        oblivious_transfer=True,
+        print_mode="circuit",
+        log_level=logging.WARNING,
+):
+    logging.getLogger().setLevel(log_level)
+
+    if party == "alice":
+        alice = Alice(circuit_path, oblivious_transfer=oblivious_transfer)
+        alice.start()
+    else:
+        logging.error(f"Unknown party '{party}'")
+
 
 if __name__ == '__main__':
     import argparse
+
 
     def init():
         log_levels = {
@@ -107,6 +127,13 @@ if __name__ == '__main__':
                             choices=log_levels.keys(),
                             default="warning",
                             help="the log level (default 'warning')")
+        main(
+            party=parser.parse_args().party,
+            circuit_path=parser.parse_args().circuit,
+            oblivious_transfer=not parser.parse_args().no_oblivious_transfer,
+            print_mode=parser.parse_args().m,
+            log_level=log_levels[parser.parse_args().loglevel],
+        )
 
 
-
+    init()

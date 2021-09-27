@@ -14,6 +14,24 @@ def encrypt(key, data):
     return f.encrypt(data)
 
 
+def decrypt(key, data):
+    """
+    Decrypt a message
+    Args:
+        key: The decryption key
+        data: The message to decrypt
+
+    Returns: The decrypted message as a byte stream
+
+    """
+    f = Fernet(key)
+    return f.decrypt(data)
+
+
+def evaluate(circuit, g_tables, p_bits_out, a_inputs, b_inputs):
+    pass
+
+
 class GarbledGate:
     """
     A representation of a garbled gate.
