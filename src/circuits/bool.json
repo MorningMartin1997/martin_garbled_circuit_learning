@@ -1,0 +1,14 @@
+{
+  "name": "bool",
+  "circuits": [
+    {
+      "id": "AND gate",
+      "alice": [1],
+      "bob": [2],
+      "out": [3],
+      "gates": [
+        {"id": 3, "type": "AND", "in": [1, 2]}
+      ]
+    }
+  ]
+}
