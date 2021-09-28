@@ -38,3 +38,7 @@ class GarblerSocket(Socket):
 def parse_json(json_path):
     with open(json_path) as json_file:
         return json.load(json_file)
+
+
+def get_encr_bits(p_bit, key0, key1):
+    return (key0, 0 ^ p_bit), (key1, 1 ^ p_bit)

@@ -29,7 +29,48 @@ def decrypt(key, data):
 
 
 def evaluate(circuit, g_tables, p_bits_out, a_inputs, b_inputs):
-    pass
+    """
+    Evaluate yao circuit with given inputs
+    :param circuit: A dict containing circuit spec.
+    :param g_tables: The yao circuit garbled tables.
+    :param p_bits_out: The p-bits of outputs
+    :param a_inputs: A dict mapping Alice's wires to (key, encr_bit) inputs
+    :param b_inputs: A dict mapping Bob's wires to (key, encr_bit) inputs.
+    :return:
+    """
+    gates = circuit["gates"]  # dict containing circuit gates
+    wire_outputs = circuit["out"]  # list of output wires
+    wire_inputs = {}  # dict containing Alice and Bob inputs
+    evaluation = {}  # dict containing result of evaluation
+
+    wire_inputs.update(a_inputs)
+    wire_inputs.update(b_inputs)
+
+    # Iterate over all gates
+    for gate in sorted(gates, key=lambda g: g["id"]):
+        gate_id, gate_in, msg = gate["id"], gate["in"], None
+        # Special case if it's a NOT gate
+        if (len(gate_in) < 2) and (gate_in[0] in wire_inputs):
+            # Fetch input key associated with the gate's input wire
+            key_in, encr_bit_in = wire_inputs[gate_in[0]]
+            # Fetch the encrypted message in the gate's garbled table
+            encr_msg = g_tables[gate_id][(encr_bit_in,)]
+            # Decrypt message
+            msg = decrypt(key_in, encr_msg)
+        elif (gate_in[0] in wire_inputs) and (gate_in[1] in wire_inputs):
+            key_a, encr_bit_a = wire_inputs[gate_in[0]]
+            key_b, encr_bit_b = wire_inputs[gate_in[1]]
+            encr_msg = g_tables[gate_id][(encr_bit_a, encr_bit_b)]
+            msg = decrypt(key_b, decrypt(key_a, encr_msg))
+
+        if msg:
+            wire_inputs[gate_id] = pickle.loads(msg)
+
+    # After all gates have been evaluated, we populate the dict of results
+    for out in wire_outputs:
+        evaluation[out] = wire_inputs[out][1] ^ p_bits_out[out]
+
+    return evaluation
 
 
 class GarbledGate:
@@ -172,7 +213,7 @@ class GarbledCircuit:
     def _gen_p_bits(self, p_bits):
         """
         Create a dict mapping each wire to a random p-bit
-        :param pbits: For debugging purpose, user can give determined p_bits
+        :param p_bits: For debugging purpose, user can give determined p_bits
         :return:
         """
         if p_bits:
