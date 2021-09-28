@@ -1,4 +1,5 @@
 import logging
+import pickle
 
 from src import yao
 
@@ -22,8 +23,12 @@ class ObliviousTransfer:
             w = self.socket.receive()  # receive wire ID where to perform OT
             logging.debug(f"Received gate ID {w}")
 
-            to_send = (b_keys[w][0], b_keys[w][1])
-            self.socket.send(to_send)
+            if self.enabled:
+                pair = (pickle.dumps(b_keys[w][0]), pickle.dumps(b_keys[w][1]))
+                self.ot_garbler(pair)
+            else:
+                to_send = (b_keys[w][0], b_keys[w][1])
+                self.socket.send(to_send)
 
         return self.socket.receive()
 
@@ -47,10 +52,20 @@ class ObliviousTransfer:
             logging.debug(f"Sending wire ID {w}")
             self.socket.send(w)
 
+            # Here the variable pair is in a specified order [clear input 0, clear input 1], so that we do not need ot
+            # But in practice, we need ot to determine which key to choose
             pair = self.socket.receive()
             logging.debug(f"Received key pair, key {b_input} selected")
             b_inputs_encr[w] = pair[b_input]
 
         result = yao.evaluate(circuit, g_tables, p_bits_out, a_inputs, b_inputs_encr)
         self.socket.send(result)
+
+    def ot_garbler(self, msgs):
+        """
+        Oblivious transfer, Alice's side
+        :param msgs: A pair (msg1, msg2) to suggest to Bob.
+        :return:
+        """
+        logging.debug("OT protocol started")
 
